@@ -1,0 +1,44 @@
+name: docker
+
+on:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+  schedule:
+    # Every day
+    - cron:  '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  build_push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - if: github.event_name != 'pull_request'
+        name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+      - if: github.event_name != 'pull_request'
+        name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          no-cache: true
+          pull: true
+          push: true
+          tags: ljmf00/archlinux:latest
+      - if: github.event_name == 'pull_request'
+        name: Test build
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          no-cache: true
+          pull: true
+          push: false
+          tags: ljmf00/archlinux:latest
