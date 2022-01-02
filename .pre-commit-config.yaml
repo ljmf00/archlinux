@@ -12,7 +12,7 @@ repos:
   - id: check-merge-conflict
   - id: check-ast
   - id: check-shebang-scripts-are-executable
-    exclude: '^.*\.j2$'
+    exclude: '^.*\.j2$|^makepkg.conf$'
   - id: check-toml
   - id: destroyed-symlinks
   - id: detect-private-key
