@@ -1,4 +1,5 @@
-FROM archlinux
+# hadolint ignore=DL3007
+FROM archlinux:latest AS base
 
 # Copy custom configs
 COPY pacman.conf /etc/pacman.conf
@@ -12,6 +13,7 @@ RUN pacman-key --init && \
 RUN pacman -Syyu base-devel git --noprogressbar --needed --noconfirm
 
 # Add user, group wheel and setup sudoers
+# hadolint ignore=SC2039
 RUN /usr/sbin/useradd -m -G wheel -g users docker && \
     /usr/sbin/echo -e "Defaults secure_path=\"/usr/local/sbin:/usr/local/bin:/usr/bin\"\n$(/usr/sbin/cat /etc/sudoers)" > /etc/sudoers && \
     /usr/sbin/sed -i -e "s/Defaults    requiretty.*/ #Defaults    requiretty/g" /etc/sudoers && \
@@ -20,6 +22,7 @@ RUN /usr/sbin/useradd -m -G wheel -g users docker && \
 WORKDIR /home/docker/
 
 # Install yay
+# hadolint ignore=DL3004,DL3003
 RUN cd /tmp && \
     git clone https://aur.archlinux.org/yay.git && \
     chown -R docker:wheel yay && \
@@ -41,6 +44,7 @@ ENV LC_CTYPE 'en_US.UTF-8'
 RUN sed -i 's/^\(session.*\)required\(.*pam_limits.so\)/\1optional\2/' /etc/pam.d/system-auth
 
 # Remove unrequired dependencies
+# hadolint ignore=SC2086
 RUN pacman -D --asdeps $(pacman -Qqe) && \
     pacman -D --asexplicit base yay && \
     pacman -S base --noprogressbar --noconfirm && \
@@ -59,5 +63,5 @@ RUN rm -rf /var/cache/pacman/pkg/* && \
 FROM scratch
 LABEL maintainer="Luís Ferreira <contact at lsferreira dot net>"
 ENV LC_CTYPE 'en_US.UTF-8'
-COPY --from=0 / /
+COPY --from=base / /
 WORKDIR /
