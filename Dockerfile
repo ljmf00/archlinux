@@ -53,6 +53,9 @@ RUN pacman -D --asdeps $(pacman -Qqe) && \
         pacman -Rns $unused_pkgs --noconfirm --noprogressbar ; \
     fi )
 
+#FIXME: yay should depend on fakeroot
+RUN pacman -S fakeroot --noprogressbar --noconfirm --needed
+
 # Remove cache and update trusted certs
 RUN rm -rf /var/cache/pacman/pkg/* && \
     rm -rf /var/lib/pacman/sync/* && \
