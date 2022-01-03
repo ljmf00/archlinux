@@ -46,15 +46,12 @@ RUN sed -i 's/^\(session.*\)required\(.*pam_limits.so\)/\1optional\2/' /etc/pam.
 # Remove unrequired dependencies
 # hadolint ignore=SC2086
 RUN pacman -D --asdeps $(pacman -Qqe) && \
-    pacman -D --asexplicit base yay && \
-    pacman -S base --noprogressbar --noconfirm && \
+    pacman -D --asexplicit yay && \
+    pacman -S --asexplicit base base-devel --noprogressbar --noconfirm && \
     (unused_pkgs="$(pacman -Qqdt)"; \
     if [ "$unused_pkgs" != "" ]; then \
         pacman -Rns $unused_pkgs --noconfirm --noprogressbar ; \
     fi )
-
-#FIXME: yay should depend on fakeroot
-RUN pacman -S fakeroot --noprogressbar --noconfirm --needed
 
 # Remove cache and update trusted certs
 RUN rm -rf /var/cache/pacman/pkg/* && \
