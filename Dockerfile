@@ -42,6 +42,7 @@ ENV LC_CTYPE 'en_US.UTF-8'
 
 # Fix PAM session permissions
 RUN sed -i 's/^\(session.*\)required\(.*pam_limits.so\)/\1optional\2/' /etc/pam.d/system-auth
+COPY 00-opt-session-pam.hook /etc/pacman.d/hooks/00-opt-session-pam.hook
 
 # Remove unrequired dependencies
 # hadolint ignore=SC2086
