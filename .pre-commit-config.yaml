@@ -16,9 +16,9 @@ repos:
       - id: check-xml
       - id: check-ast
       - id: check-executables-have-shebangs
-        exclude: '^.*\.j2$|^makepkg.conf$'
-      - id: check-shebang-scripts-are-executable
         exclude: '^.*\.j2$'
+      - id: check-shebang-scripts-are-executable
+        exclude: '^.*\.j2$|^makepkg.conf$'
       - id: check-toml
       - id: check-added-large-files
       - id: check-symlinks
