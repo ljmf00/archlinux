@@ -34,9 +34,9 @@ RUN cd /tmp && \
 ENV SHELL=/bin/bash
 
 # Set correct locale
-RUN echo "LC_ALL=en_US.UTF-8" >> /etc/environment && \
-    echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen && \
-    echo "LANG=en_US.UTF-8" > /etc/locale.conf && \
+RUN /usr/sbin/echo "LC_ALL=en_US.UTF-8" >> /etc/environment && \
+    /usr/sbin/echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen && \
+    /usr/sbin/echo "LANG=en_US.UTF-8" > /etc/locale.conf && \
     locale-gen en_US.UTF-8
 ENV LC_CTYPE 'en_US.UTF-8'
 
