@@ -81,6 +81,7 @@ repos:
         args:
           - '--ignore'
           - 'DL3059'
+          # FIXME: https://github.com/koalaman/shellcheck/issues/2321
           - '--ignore'
           - 'SC3037'
   - repo: https://github.com/shellcheck-py/shellcheck-py
