@@ -10,13 +10,13 @@ on:
   workflow_dispatch:
 
 jobs:
-  pre-commit:
+  before-commit:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v2
-    - uses: pre-commit/action@v2.0.3
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+      - uses: before-commit/run-action@v2.0.3
 
   shellcheck:
     runs-on: ubuntu-latest
