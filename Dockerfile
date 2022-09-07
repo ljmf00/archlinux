@@ -1,5 +1,5 @@
 # hadolint ignore=DL3007
-FROM archlinux:latest AS base
+FROM archlinux/archlinux:base-devel AS base
 
 # Copy custom configs
 COPY pacman.conf /etc/pacman.conf
@@ -9,8 +9,8 @@ COPY makepkg.conf /etc/makepkg.conf
 RUN pacman-key --init && \
     pacman-key --populate archlinux
 
-# Install base-devel and git
-RUN pacman -Syyu base-devel git --noprogressbar --needed --noconfirm
+# Install git
+RUN pacman -Syyu git --noprogressbar --needed --noconfirm
 
 # Add user, group wheel and setup sudoers
 # hadolint ignore=SC2039
