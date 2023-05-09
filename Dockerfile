@@ -52,7 +52,8 @@ COPY --link 00-opt-session-pam.hook /etc/pacman.d/hooks/00-opt-session-pam.hook
 # hadolint ignore=SC2086
 RUN pacman -D --asdeps $(pacman -Qqe) && \
     pacman -D --asexplicit yay && \
-    pacman -S --asexplicit base base-devel --noprogressbar --noconfirm && \
+    pacman -Rscu --noprogressbar --noconfirm base-devel git && \
+    pacman -S --asexplicit base --noprogressbar --noconfirm && \
     (unused_pkgs="$(pacman -Qqdt)"; \
     if [ "$unused_pkgs" != "" ]; then \
         pacman -Rns $unused_pkgs --noconfirm --noprogressbar ; \
