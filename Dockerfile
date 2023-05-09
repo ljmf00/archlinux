@@ -1,9 +1,12 @@
+# syntax=docker/dockerfile:1.4
 # hadolint ignore=DL3007
 FROM archlinux:latest AS base
 
 # Copy custom configs
-COPY pacman.conf /etc/pacman.conf
-COPY makepkg.conf /etc/makepkg.conf
+# hadolint ignore=DL3021
+COPY --link pacman.conf /etc/pacman.conf
+# hadolint ignore=DL3021
+COPY --link makepkg.conf /etc/makepkg.conf
 
 # Init keyring
 RUN pacman-key --init && \
@@ -42,7 +45,8 @@ ENV LC_CTYPE 'en_US.UTF-8'
 
 # Fix PAM session permissions
 RUN sed -i 's/^\(session.*\)required\(.*pam_limits.so\)/\1optional\2/' /etc/pam.d/system-auth
-COPY 00-opt-session-pam.hook /etc/pacman.d/hooks/00-opt-session-pam.hook
+# hadolint ignore=DL3021
+COPY --link 00-opt-session-pam.hook /etc/pacman.d/hooks/00-opt-session-pam.hook
 
 # Remove unrequired dependencies
 # hadolint ignore=SC2086
@@ -61,8 +65,10 @@ RUN rm -rf /var/cache/pacman/pkg/* && \
     trust extract-compat
 
 # Remove docker layers with multi-stage build
-FROM scratch
+# hadolint ignore=DL3007
+FROM archlinux:latest
 LABEL maintainer="Luís Ferreira <contact at lsferreira dot net>"
 ENV LC_CTYPE 'en_US.UTF-8'
-COPY --from=base / /
+ENV SHELL=/bin/bash
+COPY --link --from=base / /
 WORKDIR /
