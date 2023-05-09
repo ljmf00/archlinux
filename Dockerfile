@@ -57,7 +57,7 @@ RUN pacman -D --asdeps $(pacman -Qqe) && \
     if [ "$unused_pkgs" != "" ]; then \
         pacman -Rns $unused_pkgs --noconfirm --noprogressbar ; \
     fi ) && \
-    pacman -S --asexplicit base --noprogressbar --noconfirm
+    pacman -Syyu --asexplicit base --noprogressbar --noconfirm
 
 # Remove cache and update trusted certs
 RUN rm -rf /var/cache/pacman/pkg/* && \
