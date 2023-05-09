@@ -51,13 +51,14 @@ COPY --link 00-opt-session-pam.hook /etc/pacman.d/hooks/00-opt-session-pam.hook
 # Remove unrequired dependencies
 # hadolint ignore=SC2086
 RUN pacman -D --asdeps $(pacman -Qqe) && \
-    pacman -D --asexplicit yay && \
+    pacman -D --asexplicit base ca-certificates yay && \
     pacman -Rsn --noprogressbar --noconfirm base-devel multilib-devel && \
+    pacman -Syyu --asexplicit base --noprogressbar --noconfirm && \
+    pacman -S --asexplicit ca-certificates --noprogressbar --noconfirm && \
     (unused_pkgs="$(pacman -Qqdt)"; \
     if [ "$unused_pkgs" != "" ]; then \
         pacman -Rns $unused_pkgs --noconfirm --noprogressbar ; \
-    fi ) && \
-    pacman -Syyu --asexplicit base --noprogressbar --noconfirm
+    fi )
 
 # Remove cache and update trusted certs
 RUN rm -rf /var/cache/pacman/pkg/* && \
