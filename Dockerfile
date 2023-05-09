@@ -13,7 +13,7 @@ RUN pacman-key --init && \
     pacman-key --populate archlinux
 
 # Install base-devel and git
-RUN pacman -Syyu base-devel git --noprogressbar --needed --noconfirm
+RUN pacman -Syyu base-devel multilib-devel git --noprogressbar --needed --noconfirm
 
 # Add user, group wheel and setup sudoers
 # hadolint ignore=SC2039
@@ -52,18 +52,19 @@ COPY --link 00-opt-session-pam.hook /etc/pacman.d/hooks/00-opt-session-pam.hook
 # hadolint ignore=SC2086
 RUN pacman -D --asdeps $(pacman -Qqe) && \
     pacman -D --asexplicit yay && \
-    pacman -Rscu --noprogressbar --noconfirm base-devel git && \
-    pacman -S --asexplicit base --noprogressbar --noconfirm && \
+    pacman -Rsn --noprogressbar --noconfirm base-devel multilib-devel && \
     (unused_pkgs="$(pacman -Qqdt)"; \
     if [ "$unused_pkgs" != "" ]; then \
         pacman -Rns $unused_pkgs --noconfirm --noprogressbar ; \
-    fi )
+    fi ) && \
+    pacman -S --asexplicit base --noprogressbar --noconfirm
 
 # Remove cache and update trusted certs
 RUN rm -rf /var/cache/pacman/pkg/* && \
     rm -rf /var/lib/pacman/sync/* && \
     rm -rf /tmp/* && \
-    trust extract-compat
+    trust extract-compat && \
+    update-ca-trust
 
 # Remove docker layers with multi-stage build
 # hadolint ignore=DL3007
