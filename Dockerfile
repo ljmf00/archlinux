@@ -50,15 +50,14 @@ COPY --link 00-opt-session-pam.hook /etc/pacman.d/hooks/00-opt-session-pam.hook
 
 # Remove unrequired dependencies
 # hadolint ignore=SC2086
-RUN pacman -D --asdeps $(pacman -Qqe) && \
-    pacman -D --asexplicit base ca-certificates yay && \
-    pacman -Rsn --noprogressbar --noconfirm base-devel multilib-devel && \
-    pacman -Syyu --asexplicit base --noprogressbar --noconfirm && \
-    pacman -S --asexplicit ca-certificates --noprogressbar --noconfirm && \
+RUN pacman -D --asdeps $(pacman -Qq) && \
+    pacman -Rcsun base-devel multilib-devel --noconfirm --noprogressbar && \
+    pacman -D --asexplicit base yay && \
     (unused_pkgs="$(pacman -Qqdt)"; \
     if [ "$unused_pkgs" != "" ]; then \
-        pacman -Rns $unused_pkgs --noconfirm --noprogressbar ; \
-    fi )
+        pacman -Rcsun $unused_pkgs --noconfirm --noprogressbar ; \
+    fi ) && \
+    pacman -Syyu --asexplicit base --noprogressbar --noconfirm --overwrite '*'
 
 # Remove cache and update trusted certs
 RUN rm -rf /var/cache/pacman/pkg/* && \
@@ -69,9 +68,9 @@ RUN rm -rf /var/cache/pacman/pkg/* && \
 
 # Remove docker layers with multi-stage build
 # hadolint ignore=DL3007
-FROM archlinux:latest
+FROM scratch
 LABEL maintainer="Luís Ferreira <contact at lsferreira dot net>"
 ENV LC_CTYPE 'en_US.UTF-8'
 ENV SHELL=/bin/bash
-COPY --link --from=base / /
+COPY --from=base / /
 WORKDIR /
