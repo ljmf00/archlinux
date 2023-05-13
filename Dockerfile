@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1.4
-ARG arch=generic
+ARG TARGETARCH=$TARGETARCH
+ARG TARGETVARIANT=$TARGETVARIANT
 
 # -----------------------------------------------------------------------------
 # PLATFORM STAGE: GENERIC
@@ -26,7 +27,7 @@ COPY --link ./amd64/makepkg.conf /etc/makepkg.conf
 # PLATFORM STAGE: ARM/v7 (armv7)
 # -----------------------------------------------------------------------------
 # hadolint ignore=DL3007
-FROM alpine:latest AS bootstrap0-archlinux-armhf
+FROM alpine:latest AS bootstrap0-archlinux-armv7
 
 # Install curl bash and update CA certificates
 # hadolint ignore=DL3018
@@ -39,8 +40,8 @@ RUN wget --progress=dot:giga --prefer-family=IPv4 \
     mkdir -p /rootfs && \
     tar -v -C /rootfs --extract --file "ArchLinuxARM-armv7-latest.tar.gz"
 
-FROM --platform=linux/armhf scratch AS bootstrap-archlinux-armhf
-COPY --from=bootstrap0-archlinux-armhf /rootfs/ /
+FROM --platform=linux/arm/v7 scratch AS bootstrap-archlinux-armv7
+COPY --from=bootstrap0-archlinux-armv7 /rootfs/ /
 
 # Init keyring and update
 RUN pacman-key --init && \
@@ -57,7 +58,7 @@ RUN rm -rf /boot/*
 # PLATFORM STAGE: ARM64/v8 (aarch64)
 # -----------------------------------------------------------------------------
 # hadolint ignore=DL3007
-FROM alpine:latest AS bootstrap0-archlinux-aarch64
+FROM alpine:latest AS bootstrap0-archlinux-arm64
 
 # Install curl bash and update CA certificates
 # hadolint ignore=DL3018
@@ -70,8 +71,8 @@ RUN wget --progress=dot:giga --prefer-family=IPv4 \
     mkdir -p /rootfs && \
     tar -v -C /rootfs --extract --file "ArchLinuxARM-aarch64-latest.tar.gz"
 
-FROM --platform=linux/aarch64 scratch AS bootstrap-archlinux-aarch64
-COPY --from=bootstrap0-archlinux-aarch64 /rootfs/ /
+FROM --platform=linux/arm64 scratch AS bootstrap-archlinux-arm64
+COPY --from=bootstrap0-archlinux-arm64 /rootfs/ /
 
 # Init keyring and update
 RUN pacman-key --init && \
@@ -88,7 +89,7 @@ RUN rm -rf /boot/*
 # BOOTSTRAP
 # -----------------------------------------------------------------------------
 # hadolint ignore=DL3006
-FROM bootstrap-archlinux-${arch} AS bootstrap-archlinux
+FROM bootstrap-archlinux-${TARGETARCH}${TARGETVARIANT} AS bootstrap-archlinux
 
 # Remove unecessary packages
 # hadolint ignore=SC2086
