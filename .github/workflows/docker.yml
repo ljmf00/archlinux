@@ -43,7 +43,7 @@ jobs:
             network=host
             image=moby/buildkit:latest
 
-      - if: github.event_name != 'pull_request' && matrix.target == 'base'
+      - if: github.event_name != 'pull_request'
         name: Test build (${{ matrix.target }})
         uses: docker/build-push-action@v4.0.0
         with:
@@ -56,23 +56,7 @@ jobs:
           push: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          tags: ljmf00/archlinux:${{ matrix.target }},ljmf00/archlinux:latest
-          target: ${{ matrix.target }}-squash
-
-      - if: github.event_name != 'pull_request' && matrix.target != 'base'
-        name: Test build (${{ matrix.target }})
-        uses: docker/build-push-action@v4.0.0
-        with:
-          builder: ${{ steps.buildx.outputs.name }}
-          platforms: linux/${{ matrix.arch }}
-          build-args: arch=${{ matrix.arch }}
-          context: .
-          no-cache: true
-          pull: true
-          push: true
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          tags: ljmf00/archlinux:${{ matrix.target }}
+          tags: ljmf00/archlinux:${{ matrix.target }}-${{ matrix.arch }}
           target: ${{ matrix.target }}-squash
 
       - if: github.event_name == 'pull_request'
@@ -88,5 +72,5 @@ jobs:
           push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          tags: ljmf00/archlinux:${{ matrix.target }}
+          tags: ljmf00/archlinux:${{ matrix.target }}-${{ matrix.arch }}
           target: ${{ matrix.target }}-squash
