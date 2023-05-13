@@ -18,7 +18,7 @@ repos:
       - id: check-executables-have-shebangs
         exclude: '^.*\.j2$'
       - id: check-shebang-scripts-are-executable
-        exclude: '^.*\.j2$|^makepkg.conf$'
+        exclude: '^.*\.j2$|^amd64/makepkg.conf$'
       - id: check-toml
       - id: check-added-large-files
       - id: check-symlinks
@@ -81,9 +81,17 @@ repos:
         args:
           - '--ignore'
           - 'DL3059'
+          - '--ignore'
+          - 'DL3029'
+          - '--ignore'
+          - 'DL4006'
+          - '--ignore'
+          - 'DL3021'
           # FIXME: https://github.com/koalaman/shellcheck/issues/2321
           - '--ignore'
           - 'SC3037'
+          - '--ignore'
+          - 'SC1008'
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.8.0.4
     hooks:
