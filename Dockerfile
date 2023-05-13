@@ -1,29 +1,63 @@
 # syntax=docker/dockerfile:1.4
-ARG arch=amd64
+ARG arch=generic
+
+# -----------------------------------------------------------------------------
+# PLATFORM STAGE: GENERIC
+# -----------------------------------------------------------------------------
+# hadolint ignore=DL3007
+FROM archlinux:latest AS bootstrap-archlinux-generic
+
+# Init keyring and update
+RUN pacman-key --init && \
+    pacman-key --populate archlinux
 
 # -----------------------------------------------------------------------------
 # PLATFORM STAGE: AMD64 (x86_64)
 # -----------------------------------------------------------------------------
-# hadolint ignore=DL3007
-FROM --platform=linux/amd64 archlinux:latest AS bootstrap-archlinux-amd64
+FROM bootstrap-archlinux-generic AS bootstrap-archlinux-amd64
 
 # Copy custom configs
-
 # hadolint ignore=DL3021
 COPY --link ./amd64/pacman.conf /etc/pacman.conf
 # hadolint ignore=DL3021
 COPY --link ./amd64/makepkg.conf /etc/makepkg.conf
 
-# Init keyring and update
-RUN pacman-key --init && \
-    pacman-key --populate archlinux && \
-    pacman -Syyu --noprogressbar --needed --noconfirm
-
 # -----------------------------------------------------------------------------
-# PLATFORM STAGE: ARM64 (aarch64)
+# PLATFORM STAGE: ARM/v7 (armv7)
 # -----------------------------------------------------------------------------
 # hadolint ignore=DL3007
-FROM --platform=linux/arm64 alpine:latest AS bootstrap0-archlinux-arm64
+FROM alpine:latest AS bootstrap0-archlinux-armv7
+
+# Install curl bash and update CA certificates
+# hadolint ignore=DL3018
+RUN apk add --no-cache wget bash tar ca-certificates \
+  && update-ca-certificates
+
+RUN wget --progress=dot:giga --prefer-family=IPv4 \
+        --user-agent="Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:52.0) Gecko/20100101 Firefox/52.0" \
+        http://os.archlinuxarm.org/os/ArchLinuxARM-armv7-latest.tar.gz && \
+    mkdir -p /rootfs && \
+    tar -v -C /rootfs --extract --file "ArchLinuxARM-armv7-latest.tar.gz"
+
+FROM --platform=linux/arm/v7 scratch AS bootstrap-archlinux-armv7
+COPY --from=bootstrap0-archlinux-armv7 /rootfs/ /
+
+# Init keyring and update
+RUN pacman-key --init && \
+    pacman-key --populate archlinuxarm
+
+# Remove linux package
+RUN pacman -Rscun linux-armv7 linux-firmware --noconfirm --noprogressbar
+
+# Remove boot leftovers
+# hadolint ignore=SC2115
+RUN rm -rf /boot/*
+
+# -----------------------------------------------------------------------------
+# PLATFORM STAGE: ARM64/v8 (aarch64)
+# -----------------------------------------------------------------------------
+# hadolint ignore=DL3007
+FROM alpine:latest AS bootstrap0-archlinux-aarch64
 
 # Install curl bash and update CA certificates
 # hadolint ignore=DL3018
@@ -34,21 +68,45 @@ RUN wget --progress=dot:giga --prefer-family=IPv4 \
         --user-agent="Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:52.0) Gecko/20100101 Firefox/52.0" \
         http://os.archlinuxarm.org/os/ArchLinuxARM-aarch64-latest.tar.gz && \
     mkdir -p /rootfs && \
-    tar -C /rootfs --extract --file "ArchLinuxARM-aarch64-latest.tar.gz"
+    tar -v -C /rootfs --extract --file "ArchLinuxARM-aarch64-latest.tar.gz"
 
-FROM --platform=linux/arm64 scratch AS bootstrap-archlinux-arm64
-COPY --from=bootstrap0-archlinux-arm64 /rootfs/ /
+FROM --platform=linux/arm64/v8 scratch AS bootstrap-archlinux-aarch64
+COPY --from=bootstrap0-archlinux-aarch64 /rootfs/ /
 
 # Init keyring and update
 RUN pacman-key --init && \
-    pacman-key --populate archlinuxarm && \
-    pacman -Syyu --noprogressbar --needed --noconfirm
+    pacman-key --populate archlinuxarm
+
+# Remove linux package
+RUN pacman -Rscun linux-aarch64 linux-firmware --noconfirm --noprogressbar
+
+# Remove boot leftovers
+# hadolint ignore=SC2115
+RUN rm -rf /boot/*
+
+# -----------------------------------------------------------------------------
+# BOOTSTRAP
+# -----------------------------------------------------------------------------
+# hadolint ignore=DL3006
+FROM bootstrap-archlinux-${arch} AS bootstrap-archlinux
+
+# Remove unecessary packages
+# hadolint ignore=SC2086
+RUN --network=none pacman -D --asdeps $(pacman -Qq) && \
+                   pacman -D --asexplicit base && \
+                   (unused_pkgs="$(pacman -Qqdt)"; \
+                   if [ "$unused_pkgs" != "" ]; then \
+                       pacman -Rcsun $unused_pkgs --noconfirm --noprogressbar ; \
+                   fi )
+
+# Update
+RUN pacman -Syyu --noprogressbar --needed --noconfirm
 
 # -----------------------------------------------------------------------------
 # BASE
 # -----------------------------------------------------------------------------
 # hadolint ignore=DL3006
-FROM bootstrap-archlinux-${arch} AS base-stage0
+FROM bootstrap-archlinux AS base-stage0
 
 # Set default shell
 SHELL [ "/bin/sh", "-c" ]
