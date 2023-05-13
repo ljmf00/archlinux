@@ -181,7 +181,7 @@ FROM lite-stage0 AS from-lite
 FROM from-base AS devel-stage0
 
 # Install base-devel and multilib-devel
-RUN pacman -Syyu base-devel multilib-devel git --noprogressbar --needed --noconfirm
+RUN pacman -Syyu base-devel git --noprogressbar --needed --noconfirm
 
 # alias for FROM dependencies
 FROM devel-stage0 AS from-devel
