@@ -20,7 +20,6 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        arch: [amd64, aarch64, armhf]
         target: [base, lite, devel, aur]
     steps:
       - name: Checkout
@@ -48,15 +47,14 @@ jobs:
         uses: docker/build-push-action@v4.0.0
         with:
           builder: ${{ steps.buildx.outputs.name }}
-          platforms: linux/${{ matrix.arch }}
-          build-args: arch=${{ matrix.arch }}
+          platforms: linux/arm64,linux/arm/v7,linux/amd64
           context: .
           no-cache: true
           pull: true
           push: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          tags: ljmf00/archlinux:${{ matrix.target }}-${{ matrix.arch }}
+          tags: ljmf00/archlinux:${{ matrix.target }}
           target: ${{ matrix.target }}-squash
 
       - if: github.event_name == 'pull_request'
@@ -64,13 +62,12 @@ jobs:
         uses: docker/build-push-action@v4.0.0
         with:
           builder: ${{ steps.buildx.outputs.name }}
-          platforms: linux/${{ matrix.arch }}
-          build-args: arch=${{ matrix.arch }}
+          platforms: linux/arm64,linux/arm/v7,linux/amd64
           context: .
           no-cache: true
           pull: true
           push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          tags: ljmf00/archlinux:${{ matrix.target }}-${{ matrix.arch }}
+          tags: ljmf00/archlinux:${{ matrix.target }}
           target: ${{ matrix.target }}-squash
