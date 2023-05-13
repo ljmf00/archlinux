@@ -26,7 +26,7 @@ COPY --link ./amd64/makepkg.conf /etc/makepkg.conf
 # PLATFORM STAGE: ARM/v7 (armv7)
 # -----------------------------------------------------------------------------
 # hadolint ignore=DL3007
-FROM alpine:latest AS bootstrap0-archlinux-armv7
+FROM alpine:latest AS bootstrap0-archlinux-armhf
 
 # Install curl bash and update CA certificates
 # hadolint ignore=DL3018
@@ -39,8 +39,8 @@ RUN wget --progress=dot:giga --prefer-family=IPv4 \
     mkdir -p /rootfs && \
     tar -v -C /rootfs --extract --file "ArchLinuxARM-armv7-latest.tar.gz"
 
-FROM --platform=linux/arm/v7 scratch AS bootstrap-archlinux-armv7
-COPY --from=bootstrap0-archlinux-armv7 /rootfs/ /
+FROM --platform=linux/armhf scratch AS bootstrap-archlinux-armhf
+COPY --from=bootstrap0-archlinux-armhf /rootfs/ /
 
 # Init keyring and update
 RUN pacman-key --init && \
@@ -70,7 +70,7 @@ RUN wget --progress=dot:giga --prefer-family=IPv4 \
     mkdir -p /rootfs && \
     tar -v -C /rootfs --extract --file "ArchLinuxARM-aarch64-latest.tar.gz"
 
-FROM --platform=linux/arm64/v8 scratch AS bootstrap-archlinux-aarch64
+FROM --platform=linux/aarch64 scratch AS bootstrap-archlinux-aarch64
 COPY --from=bootstrap0-archlinux-aarch64 /rootfs/ /
 
 # Init keyring and update
