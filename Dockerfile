@@ -170,7 +170,11 @@ SHELL [ "/usr/bin/busybox", "sh",  "-c" ]
 
 # Remove coreutils and other linux utils
 RUN pacman -Rndd gawk findutils grep bash coreutils --noconfirm --noprogressbar && \
-    /usr/bin/busybox --install
+    /usr/bin/busybox --install && \
+    /usr/bin/find /usr/bin/ -type f | grep -vE 'pacman|busybox|xargs|rm|grep|find' | xargs -I{} rm -rf '{}' && \
+    for b in $(busybox --list-full | grep -v busybox); do \
+        ln -sf /usr/bin/busybox "/$b"; \
+    done
 
 # alias for FROM dependencies
 FROM lite-stage0 AS from-lite
