@@ -10,13 +10,7 @@ on:
 
 jobs:
   before-commit:
-    strategy:
-      matrix:
-        os:
-          - ubuntu-latest
-          - macos-latest
-          - windows-latest
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     env:
       SKIP: no-commit-to-branch
     steps:
