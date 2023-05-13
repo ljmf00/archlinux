@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        arch: [amd64]
+        arch: [amd64, aarch64]
         target: [base, lite, devel, aur]
     steps:
       - name: Checkout
