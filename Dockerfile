@@ -243,6 +243,7 @@ LABEL maintainer="Luís Ferreira <contact at lsferreira dot net>"
 
 # Set common env vars
 ENV LC_CTYPE 'en_US.UTF-8'
+ENV LANG 'en_US.UTF-8'
 ENV SHELL=/bin/sh
 
 # Set default shell
