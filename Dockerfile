@@ -11,19 +11,14 @@ ARG TARGETARCH=$TARGETARCH
 ARG TARGETVARIANT=$TARGETVARIANT
 
 # -----------------------------------------------------------------------------
-# PLATFORM STAGE: GENERIC
+# PLATFORM STAGE: AMD64 (x86_64)
 # -----------------------------------------------------------------------------
 # hadolint ignore=DL3007
-FROM --platform=$TARGETPLATFORM archlinux:latest AS bootstrap-archlinux-generic
+FROM --platform=linux/amd64 archlinux:latest AS bootstrap-archlinux-amd64
 
 # Init keyring and update
 RUN pacman-key --init && \
     pacman-key --populate archlinux
-
-# -----------------------------------------------------------------------------
-# PLATFORM STAGE: AMD64 (x86_64)
-# -----------------------------------------------------------------------------
-FROM --platform=linux/amd64 bootstrap-archlinux-generic AS bootstrap-archlinux-amd64
 
 # Copy custom configs
 # hadolint ignore=DL3021
@@ -50,6 +45,9 @@ RUN wget --progress=dot:giga --prefer-family=IPv4 \
 
 FROM --platform=linux/arm/v7 scratch AS bootstrap-archlinux-armv7
 COPY --from=bootstrap0-archlinux-armv7 /rootfs/ /
+
+# hadolint ignore=DL3021
+COPY --link ./generic/pacman.conf /etc/pacman.conf
 
 # Init keyring and update
 RUN pacman-key --init && \
@@ -82,6 +80,9 @@ RUN wget --progress=dot:giga --prefer-family=IPv4 \
 FROM --platform=linux/arm64 scratch AS bootstrap-archlinux-arm64
 COPY --from=bootstrap0-archlinux-arm64 /rootfs/ /
 
+# hadolint ignore=DL3021
+COPY --link ./generic/pacman.conf /etc/pacman.conf
+
 # Init keyring and update
 RUN pacman-key --init && \
     pacman-key --populate archlinuxarm
@@ -92,6 +93,48 @@ RUN pacman -Rscun linux-aarch64 linux-firmware --noconfirm --noprogressbar
 # Remove boot leftovers
 # hadolint ignore=SC2115
 RUN rm -rf /boot/*
+
+# -----------------------------------------------------------------------------
+# BUILDER BOOTSTRAP
+# -----------------------------------------------------------------------------
+# hadolint ignore=DL3006
+FROM --platform=$BUILDPLATFORM bootstrap-archlinux-${BUILDARCH}${BUILDVARIANT} AS bootstrap-archlinux-builder
+
+# Update and install build tools
+RUN pacman -Syyu base base-devel pacman-contrib devtools --noprogressbar --needed --noconfirm
+
+# -----------------------------------------------------------------------------
+# PLATFORM STAGE: i386 (x86) (After build platform bootstrap stage)
+# -----------------------------------------------------------------------------
+FROM --platform=$BUILDPLATFORM bootstrap-archlinux-builder AS bootstrap0-archlinux-386
+
+ENV PACMAN_MIRRORLIST 'Server = https://mirror.archlinux32.org/$arch/$repo'
+
+# hadolint ignore=DL3021
+COPY --link ./generic/pacman-nosig.conf /etc/pacman.conf
+RUN echo "$PACMAN_MIRRORLIST" > /etc/pacman.d/mirrorlist
+
+# hadolint ignore=SC3009
+RUN --network=none mkdir -p /rootfs/ && \
+                   mkdir -m 0755 -p /rootfs/var/{cache/pacman/pkg,lib/pacman,log} /rootfs/{dev,run,etc} && \
+                   mkdir -m 1777 -p /rootfs/tmp && \
+                   mkdir -m 0555 -p /rootfs/{sys,proc} && \
+                   mknod /rootfs/dev/null c 1 3
+
+RUN pacman -r /rootfs/ --arch i686 -Sy --noconfirm --noprogressbar base archlinux32-keyring
+
+COPY --link ./i686/pacman.conf /rootfs/etc/pacman.conf
+RUN echo "$PACMAN_MIRRORLIST" > /rootfs/etc/pacman.d/mirrorlist
+
+FROM --platform=linux/386 scratch AS bootstrap-archlinux-386
+COPY --from=bootstrap0-archlinux-386 /rootfs/ /
+
+# Init keyring and update
+RUN pacman-key --init && \
+    curl -Ss 'https://archlinux32.org/keys.php?k=5FDCA472AB93292BC678FD59255A76DB9A12601A' | gpg --homedir /etc/pacman.d/gnupg/ --import && \
+    curl -Ss 'https://archlinux32.org/keys.php?k=16194A82231E9EF823562181C8E8F5A0AF9BA7E7' | gpg --homedir /etc/pacman.d/gnupg/ --import && \
+    pacman-key --populate && \
+    pacman-key --refresh
 
 # -----------------------------------------------------------------------------
 # BOOTSTRAP
@@ -141,6 +184,7 @@ ENV LC_CTYPE 'en_US.UTF-8'
 
 # hadolint ignore=DL3021
 COPY --link ./generic/00-opt-session-pam.hook /etc/pacman.d/hooks/00-opt-session-pam.hook
+COPY --link ./generic/00-package-cleanup.hook /etc/pacman.d/hooks/00-package-cleanup.hook
 
 # Remove unrequired dependencies
 # hadolint ignore=SC2086
