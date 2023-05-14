@@ -42,6 +42,10 @@ jobs:
             network=host
             image=moby/buildkit:latest
 
+      - name: Get current date
+        id: date
+        run: echo "::set-output name=date::$(date +'%Y%m%d%H%M%S')"
+
       - if: github.event_name != 'pull_request' && matrix.target == 'base'
         name: Build and push (base)
         uses: docker/build-push-action@v4.0.0
@@ -54,7 +58,7 @@ jobs:
           push: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          tags: docker.io/ljmf00/archlinux:${{ matrix.target }},docker.io/ljmf00/archlinux:latest
+          tags: docker.io/ljmf00/archlinux:${{ matrix.target }},docker.io/ljmf00/archlinux:latest,docker.io/ljmf00/archlinux:${{ matrix.target }}-${{ steps.date.outputs.date }}
           target: ${{ matrix.target }}-squash
 
       - if: github.event_name != 'pull_request' && matrix.target != 'base'
@@ -69,7 +73,7 @@ jobs:
           push: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          tags: docker.io/ljmf00/archlinux:${{ matrix.target }}
+          tags: docker.io/ljmf00/archlinux:${{ matrix.target }},docker.io/ljmf00/archlinux:${{ matrix.target }}-${{ steps.date.outputs.date }}
           target: ${{ matrix.target }}-squash
 
       - if: github.event_name == 'pull_request'
@@ -90,7 +94,7 @@ jobs:
           pull: false
           push: true
           cache-from: type=gha
-          tags: ghcr.io/ljmf00/archlinux:${{ matrix.target }},ghcr.io/ljmf00/archlinux:latest
+          tags: ghcr.io/ljmf00/archlinux:${{ matrix.target }},ghcr.io/ljmf00/archlinux:latest,ghcr.io/ljmf00/archlinux:${{ matrix.target }}-${{ steps.date.outputs.date }}
           target: ${{ matrix.target }}-squash
 
       - if: github.event_name == 'pull_request' && matrix.target != 'base'
@@ -103,7 +107,7 @@ jobs:
           pull: false
           push: true
           cache-from: type=gha
-          tags: ghcr.io/ljmf00/archlinux:${{ matrix.target }}
+          tags: ghcr.io/ljmf00/archlinux:${{ matrix.target }},ghcr.io/ljmf00/archlinux:${{ matrix.target }}-${{ steps.date.outputs.date }}
           target: ${{ matrix.target }}-squash
 
       - if: github.event_name == 'pull_request'
