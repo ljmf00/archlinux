@@ -54,7 +54,7 @@ jobs:
           push: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          tags: ljmf00/archlinux:${{ matrix.target }},ljmf00/archlinux:latest
+          tags: docker.io/ljmf00/archlinux:${{ matrix.target }},docker.io/ljmf00/archlinux:latest
           target: ${{ matrix.target }}-squash
 
       - if: github.event_name != 'pull_request' && matrix.target != 'base'
@@ -69,7 +69,41 @@ jobs:
           push: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          tags: ljmf00/archlinux:${{ matrix.target }}
+          tags: docker.io/ljmf00/archlinux:${{ matrix.target }}
+          target: ${{ matrix.target }}-squash
+
+      - if: github.event_name == 'pull_request'
+        name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - if: github.event_name == 'pull_request' && matrix.target == 'base'
+        name: Build and push (base)
+        uses: docker/build-push-action@v4.0.0
+        with:
+          builder: ${{ steps.buildx.outputs.name }}
+          platforms: linux/arm64,linux/arm/v7,linux/amd64,linux/386
+          context: .
+          pull: false
+          push: true
+          cache-from: type=gha
+          tags: ghcr.io/ljmf00/archlinux:${{ matrix.target }},ghcr.io/ljmf00/archlinux:latest
+          target: ${{ matrix.target }}-squash
+
+      - if: github.event_name == 'pull_request' && matrix.target != 'base'
+        name: Build and push
+        uses: docker/build-push-action@v4.0.0
+        with:
+          builder: ${{ steps.buildx.outputs.name }}
+          platforms: linux/arm64,linux/arm/v7,linux/amd64,linux/386
+          context: .
+          pull: false
+          push: true
+          cache-from: type=gha
+          tags: ghcr.io/ljmf00/archlinux:${{ matrix.target }}
           target: ${{ matrix.target }}-squash
 
       - if: github.event_name == 'pull_request'
@@ -84,13 +118,13 @@ jobs:
           push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          tags: ljmf00/archlinux:${{ matrix.target }}
+          tags: docker.io/ljmf00/archlinux:${{ matrix.target }}
           target: ${{ matrix.target }}-squash
 
       - name: Anchore scan
         uses: anchore/scan-action@v3.3.5
         with:
-          image: ljmf00/archlinux:${{ matrix.target }}
+          image: docker.io/ljmf00/archlinux:${{ matrix.target }}
           acs-report-enable: true
 
       - name: Upload Anchore Scan Report
