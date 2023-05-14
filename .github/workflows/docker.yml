@@ -76,7 +76,7 @@ jobs:
           tags: docker.io/ljmf00/archlinux:${{ matrix.target }},docker.io/ljmf00/archlinux:${{ matrix.target }}-${{ steps.date.outputs.date }}
           target: ${{ matrix.target }}-squash
 
-      - if: github.event_name == 'pull_request'
+      - if: github.event_name != 'pull_request'
         name: Login to GitHub Container Registry
         uses: docker/login-action@v2
         with:
@@ -84,7 +84,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - if: github.event_name == 'pull_request' && matrix.target == 'base'
+      - if: github.event_name != 'pull_request' && matrix.target == 'base'
         name: Build and push (base)
         uses: docker/build-push-action@v4.0.0
         with:
@@ -97,7 +97,7 @@ jobs:
           tags: ghcr.io/ljmf00/archlinux:${{ matrix.target }},ghcr.io/ljmf00/archlinux:latest,ghcr.io/ljmf00/archlinux:${{ matrix.target }}-${{ steps.date.outputs.date }}
           target: ${{ matrix.target }}-squash
 
-      - if: github.event_name == 'pull_request' && matrix.target != 'base'
+      - if: github.event_name != 'pull_request' && matrix.target != 'base'
         name: Build and push
         uses: docker/build-push-action@v4.0.0
         with:
