@@ -14,7 +14,7 @@ ARG TARGETVARIANT=$TARGETVARIANT
 # PLATFORM STAGE: AMD64 (x86_64)
 # -----------------------------------------------------------------------------
 # hadolint ignore=DL3007
-FROM --platform=linux/amd64 archlinux:latest AS bootstrap-archlinux-amd64
+FROM --platform=linux/amd64 docker.io/library/archlinux:latest AS bootstrap-archlinux-amd64
 
 # Init keyring and update
 RUN pacman-key --init && \
@@ -30,7 +30,7 @@ COPY --link ./amd64/makepkg.conf /etc/makepkg.conf
 # PLATFORM STAGE: ARM/v7 (armv7)
 # -----------------------------------------------------------------------------
 # hadolint ignore=DL3007
-FROM --platform=$BUILDPLATFORM alpine:latest AS bootstrap0-archlinux-armv7
+FROM --platform=$BUILDPLATFORM docker.io/library/alpine:latest AS bootstrap0-archlinux-armv7
 
 # Install curl bash and update CA certificates
 # hadolint ignore=DL3018
@@ -61,7 +61,7 @@ RUN rm -rf /boot/*
 # PLATFORM STAGE: ARM64/v8 (aarch64)
 # -----------------------------------------------------------------------------
 # hadolint ignore=DL3007
-FROM --platform=$BUILDPLATFORM alpine:latest AS bootstrap0-archlinux-arm64
+FROM --platform=$BUILDPLATFORM docker.io/library/alpine:latest AS bootstrap0-archlinux-arm64
 
 # Install curl bash and update CA certificates
 # hadolint ignore=DL3018
