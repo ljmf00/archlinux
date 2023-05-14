@@ -46,9 +46,6 @@ RUN wget --progress=dot:giga --prefer-family=IPv4 \
 FROM --platform=linux/arm/v7 scratch AS bootstrap-archlinux-armv7
 COPY --from=bootstrap0-archlinux-armv7 /rootfs/ /
 
-# hadolint ignore=DL3021
-COPY --link ./generic/pacman.conf /etc/pacman.conf
-
 # Init keyring and update
 RUN pacman-key --init && \
     pacman-key --populate archlinuxarm
@@ -79,9 +76,6 @@ RUN wget --progress=dot:giga --prefer-family=IPv4 \
 
 FROM --platform=linux/arm64 scratch AS bootstrap-archlinux-arm64
 COPY --from=bootstrap0-archlinux-arm64 /rootfs/ /
-
-# hadolint ignore=DL3021
-COPY --link ./generic/pacman.conf /etc/pacman.conf
 
 # Init keyring and update
 RUN pacman-key --init && \
