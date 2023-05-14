@@ -14,7 +14,7 @@ ARG TARGETVARIANT=$TARGETVARIANT
 # PLATFORM STAGE: GENERIC
 # -----------------------------------------------------------------------------
 # hadolint ignore=DL3007
-FROM archlinux:latest AS bootstrap-archlinux-generic
+FROM --platform=$TARGETPLATFORM archlinux:latest AS bootstrap-archlinux-generic
 
 # Init keyring and update
 RUN pacman-key --init && \
@@ -23,7 +23,7 @@ RUN pacman-key --init && \
 # -----------------------------------------------------------------------------
 # PLATFORM STAGE: AMD64 (x86_64)
 # -----------------------------------------------------------------------------
-FROM bootstrap-archlinux-generic AS bootstrap-archlinux-amd64
+FROM --platform=linux/amd64 bootstrap-archlinux-generic AS bootstrap-archlinux-amd64
 
 # Copy custom configs
 # hadolint ignore=DL3021
@@ -35,7 +35,7 @@ COPY --link ./amd64/makepkg.conf /etc/makepkg.conf
 # PLATFORM STAGE: ARM/v7 (armv7)
 # -----------------------------------------------------------------------------
 # hadolint ignore=DL3007
-FROM alpine:latest AS bootstrap0-archlinux-armv7
+FROM --platform=$BUILDPLATFORM alpine:latest AS bootstrap0-archlinux-armv7
 
 # Install curl bash and update CA certificates
 # hadolint ignore=DL3018
@@ -66,7 +66,7 @@ RUN rm -rf /boot/*
 # PLATFORM STAGE: ARM64/v8 (aarch64)
 # -----------------------------------------------------------------------------
 # hadolint ignore=DL3007
-FROM alpine:latest AS bootstrap0-archlinux-arm64
+FROM --platform=$BUILDPLATFORM alpine:latest AS bootstrap0-archlinux-arm64
 
 # Install curl bash and update CA certificates
 # hadolint ignore=DL3018
@@ -97,7 +97,7 @@ RUN rm -rf /boot/*
 # BOOTSTRAP
 # -----------------------------------------------------------------------------
 # hadolint ignore=DL3006
-FROM bootstrap-archlinux-${TARGETARCH}${TARGETVARIANT} AS bootstrap-archlinux
+FROM --platform=$TARGETPLATFORM bootstrap-archlinux-${TARGETARCH}${TARGETVARIANT} AS bootstrap-archlinux
 
 # Remove unecessary packages
 # hadolint ignore=SC2086
@@ -115,7 +115,7 @@ RUN pacman -Syyu --noprogressbar --needed --noconfirm
 # BASE
 # -----------------------------------------------------------------------------
 # hadolint ignore=DL3006
-FROM bootstrap-archlinux AS base-stage0
+FROM --platform=$TARGETPLATFORM bootstrap-archlinux AS base-stage0
 
 # Set default shell
 SHELL [ "/bin/sh", "-c" ]
