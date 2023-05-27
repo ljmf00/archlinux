@@ -48,3 +48,6 @@ rm -rf /etc/machine-id
 rm -rf /tmp/*
 rm -rf /root/*
 rm -rf /home/docker/*
+
+# Remove keys
+rm -rf /etc/ssh/ssh_host_rsa_key*
