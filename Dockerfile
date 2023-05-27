@@ -162,7 +162,15 @@ RUN echo "$PACMAN_MIRRORLIST" > /etc/pacman.d/mirrorlist
 RUN mkdir -m 0755 /rootfs/
 COPY --from=fhs / /rootfs/
 
-RUN pacman -r /rootfs/ --arch i686 -Sy --noconfirm --noprogressbar base archlinux32-keyring
+# Bootstrap needed pacman folders
+RUN --network=none                                                       : && \
+    mkdir -m 0755 /rootfs/var/cache/pacman                                 && \
+    mkdir -m 0755 /rootfs/var/cache/pacman/pkg                             && \
+    mkdir -m 0755 /rootfs/var/lib/pacman                                   && \
+    :
+
+RUN pacman -r /rootfs --arch i686                                             \
+    -Sy --noconfirm --noprogressbar --overwrite '*' base archlinux32-keyring
 
 COPY --link ./i686/pacman.conf /rootfs/etc/pacman.conf
 RUN echo "$PACMAN_MIRRORLIST" > /rootfs/etc/pacman.d/mirrorlist
