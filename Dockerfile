@@ -201,30 +201,82 @@ FROM base-stage0 AS from-base
 # -----------------------------------------------------------------------------
 # LITE
 # -----------------------------------------------------------------------------
-FROM from-base AS lite-stage0
+FROM --platform=$TARGETPLATFORM docker.io/library/alpine:edge AS lite-stage0
 
-# hadolint ignore=SC2086
-RUN pacman -Syyu busybox --noconfirm --noprogressbar && \
-    pacman -D --asdeps $(pacman -Qq) && \
-    pacman -D --asexplicit busybox pacman glibc && \
-    (unused_pkgs="$(pacman -Qqdt)"; \
-    if [ "$unused_pkgs" != "" ]; then \
-        pacman -Rcsun $unused_pkgs --noconfirm --noprogressbar ; \
-    fi )
+# Install pacman and busybox and then remove all alpine leftovers
+# hadolint ignore=DL3018
+RUN apk add --no-cache pacman busybox && \
+    apk del alpine-keys alpine-baselayout apk-tools && \
+    rm -rf /etc/apk* /lib/apk* && \
+    rm -rf /etc/alpine-release && \
+    rm -rf /etc/secfixes.d/alpine && \
+    rm -rf /etc/os-release && \
+    :
+
+# Bootstrap filesystem rootfs
+RUN --network=none                                                       : && \
+    mkdir -m 0755 /rootfs/                                                 && \
+    mkdir -m 0755 /rootfs/var                                              && \
+    mkdir -m 0755 /rootfs/var/log                                          && \
+    mkdir -m 0755 /rootfs/var/lib                                          && \
+    mkdir -m 0755 /rootfs/var/cache                                        && \
+    mkdir -m 0755 /rootfs/usr                                              && \
+    mkdir -m 0755 /rootfs/usr/bin                                          && \
+    mkdir -m 0755 /rootfs/usr/lib                                          && \
+    mkdir -m 0755 /rootfs/usr/share                                        && \
+    mkdir -m 0755 /rootfs/etc                                              && \
+    mkdir -m 0755 /rootfs/dev                                              && \
+    mkdir -m 0755 /rootfs/run                                              && \
+    mkdir -m 1777 /rootfs/tmp                                              && \
+    mkdir -m 0555 /rootfs/sys                                              && \
+    mkdir -m 0555 /rootfs/proc                                             && \
+    mkdir -m 0700 /rootfs/root                                             && \
+    :
+
+# Bootstrap needed pacman folders
+RUN --network=none                                                       : && \
+    mkdir -m 0755 /rootfs/var/cache/pacman                                 && \
+    mkdir -m 0755 /rootfs/var/cache/pacman/pkg                             && \
+    mkdir -m 0755 /rootfs/var/lib/pacman                                   && \
+    :
+
+# Copy alpine dependencies and fake an archlinux pacstrap
+RUN --network=none                                                       : && \
+    ln -s usr/bin /rootfs/bin                                              && \
+    ln -s usr/bin /rootfs/sbin                                             && \
+    cp -ar /usr/bin/* /rootfs/usr/bin                                      && \
+    cp -ar /bin/* /rootfs/usr/bin                                          && \
+    :
+
+RUN --network=none                                                       : && \
+    ln -s usr/lib /rootfs/lib                                              && \
+    ln -s usr/lib /rootfs/lib64                                            && \
+    cp -ar /usr/lib/* /rootfs/usr/lib                                      && \
+    cp -ar /lib/* /rootfs/usr/lib                                          && \
+    :
+
+RUN --network=none                                                       : && \
+    cp -ar /usr/share/* /rootfs/usr/share                                  && \
+    cp -ar /etc/* /rootfs/etc                                              && \
+    :
+
+FROM --platform=$TARGETPLATFORM scratch AS lite-stage1
+
+COPY --from=lite-stage0 /rootfs/ /
+
+# Copy necessary files from base archlinux container
+COPY --from=from-base /etc/os-release /etc/os-release
+COPY --from=from-base /etc/makepkg.conf /etc/makepkg.conf
+COPY --from=from-base /etc/pacman.conf /etc/pacman.conf
+COPY --from=from-base /etc/pacman.d/ /etc/pacman.d/
 
 # Substitute with busybox
 SHELL [ "/usr/bin/busybox", "sh",  "-c" ]
 
-# Remove coreutils and other linux utils
-RUN pacman -Rndd gawk findutils grep bash coreutils --noconfirm --noprogressbar && \
-    /usr/bin/busybox --install && \
-    /usr/bin/find /usr/bin/ -type f | grep -vE 'pacman|busybox|xargs|rm|grep|find' | xargs -I{} rm -rf '{}' && \
-    for b in $(busybox --list-full | grep -v busybox); do \
-        ln -sf /usr/bin/busybox "/$b"; \
-    done
+RUN --network=none /usr/bin/busybox --install
 
 # alias for FROM dependencies
-FROM lite-stage0 AS from-lite
+FROM lite-stage1 AS from-lite
 
 # -----------------------------------------------------------------------------
 # DEVEL
