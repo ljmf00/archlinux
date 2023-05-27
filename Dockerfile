@@ -232,7 +232,13 @@ FROM lite-stage0 AS from-lite
 FROM from-base AS devel-stage0
 
 # Install base-devel and multilib-devel
-RUN pacman -Syyu base-devel git --noprogressbar --needed --noconfirm
+RUN                                                                      : && \
+    pacman -Syyu base-devel git --noprogressbar --needed --noconfirm       && \
+    ([ "$TARGETARCH" = "amd64" ]                                              \
+        && pacman -S multilib-devel --noprogressbar --needed --noconfirm      \
+        || :                                                                  \
+    )                                                                      && \
+    :
 
 # alias for FROM dependencies
 FROM devel-stage0 AS from-devel
@@ -244,16 +250,15 @@ FROM from-devel AS aur-stage0
 
 # Install yay
 # hadolint ignore=DL3004,DL3003
-RUN pacman -Syyu --noprogressbar --noconfirm && \
-    cd /tmp && \
-    git clone https://aur.archlinux.org/yay.git && \
-    chown -R docker:wheel yay && \
-    cd yay && \
-    sudo -u docker makepkg -sic --noprogressbar --noconfirm && \
-    cd .. && rm -rf yay && \
-    rm -rf /var/cache/pacman/pkg/* && \
-    rm -rf /var/lib/pacman/sync/* && \
-    rm -rf /tmp/*
+RUN                                                                      : && \
+    pacman -Syyu --noprogressbar --noconfirm                               && \
+    cd /tmp                                                                && \
+    git clone https://aur.archlinux.org/yay.git                            && \
+    chown -R docker:wheel yay                                              && \
+    cd yay                                                                 && \
+    sudo -u docker makepkg -sic --noprogressbar --noconfirm                && \
+    cd .. && rm -rf yay                                                    && \
+    :
 
 # alias for FROM dependencies
 FROM aur-stage0 AS from-aur
