@@ -10,6 +10,57 @@ ARG TARGETOS=$TARGETOS
 ARG TARGETARCH=$TARGETARCH
 ARG TARGETVARIANT=$TARGETVARIANT
 
+# hadolint ignore=DL3007
+FROM --platform=$BUILDPLATFORM busybox:latest AS fhs-stage0
+
+# Bootstrap filesystem rootfs
+RUN --network=none                                                       : && \
+    mkdir -m 0755 /rootfs/                                                 && \
+    mkdir -m 0755 /rootfs/var                                              && \
+    mkdir -m 0755 /rootfs/var/log                                          && \
+    mkdir -m 0755 /rootfs/var/empty                                        && \
+    mkdir -m 0755 /rootfs/var/db                                           && \
+    mkdir -m 0755 /rootfs/var/opt                                          && \
+    mkdir -m 1777 /rootfs/var/tmp                                          && \
+    mkdir -m 0755 /rootfs/var/local                                        && \
+    mkdir -m 0755 /rootfs/var/lib                                          && \
+    mkdir -m 0755 /rootfs/var/cache                                        && \
+    mkdir -m 0755 /rootfs/var/spool                                        && \
+    mkdir -m 0755 /rootfs/var/spool/mail                                   && \
+    ln -s ../run /rootfs/var/run                                           && \
+    ln -s spool/mail /rootfs/var/mail                                      && \
+    ln -s ../run/lock /rootfs/var/lock                                     && \
+    mkdir -m 0755 /rootfs/usr                                              && \
+    mkdir -m 0755 /rootfs/usr/bin                                          && \
+    ln -s bin /rootfs/usr/sbin                                             && \
+    mkdir -m 0755 /rootfs/usr/lib                                          && \
+    mkdir -m 0755 /rootfs/usr/local                                        && \
+    mkdir -m 0755 /rootfs/usr/local/etc                                    && \
+    mkdir -m 0755 /rootfs/usr/local/bin                                    && \
+    mkdir -m 0755 /rootfs/usr/local/share                                  && \
+    mkdir -m 0755 /rootfs/usr/local/include                                && \
+    mkdir -m 0755 /rootfs/usr/local/src                                    && \
+    mkdir -m 0755 /rootfs/usr/share                                        && \
+    mkdir -m 0755 /rootfs/usr/include                                      && \
+    mkdir -m 0755 /rootfs/usr/src                                          && \
+    ln -s usr/bin /rootfs/bin                                              && \
+    ln -s usr/bin /rootfs/sbin                                             && \
+    ln -s usr/lib /rootfs/lib                                              && \
+    mkdir -m 0755 /rootfs/etc                                              && \
+    mkdir -m 0755 /rootfs/dev                                              && \
+    mkdir -m 0755 /rootfs/run                                              && \
+    mkdir -m 0755 /rootfs/boot                                             && \
+    mkdir -m 0755 /rootfs/run/lock                                         && \
+    mkdir -m 1777 /rootfs/tmp                                              && \
+    mkdir -m 0555 /rootfs/sys                                              && \
+    mkdir -m 0555 /rootfs/proc                                             && \
+    mkdir -m 0700 /rootfs/root                                             && \
+    :
+
+FROM --platform=$TARGETPLATFORM scratch AS fhs
+
+COPY --from=fhs-stage0 /rootfs/ /
+
 # -----------------------------------------------------------------------------
 # PLATFORM STAGE: AMD64 (x86_64)
 # -----------------------------------------------------------------------------
@@ -108,12 +159,8 @@ ENV PACMAN_MIRRORLIST 'Server = https://mirror.archlinux32.org/$arch/$repo'
 COPY --link ./generic/pacman-nosig.conf /etc/pacman.conf
 RUN echo "$PACMAN_MIRRORLIST" > /etc/pacman.d/mirrorlist
 
-# hadolint ignore=SC3009
-RUN --network=none mkdir -p /rootfs/ && \
-                   mkdir -m 0755 -p /rootfs/var/{cache/pacman/pkg,lib/pacman,log} /rootfs/{dev,run,etc} && \
-                   mkdir -m 1777 -p /rootfs/tmp && \
-                   mkdir -m 0555 -p /rootfs/{sys,proc} && \
-                   mknod /rootfs/dev/null c 1 3
+RUN mkdir -m 0755 /rootfs/
+COPY --from=fhs / /rootfs/
 
 RUN pacman -r /rootfs/ --arch i686 -Sy --noconfirm --noprogressbar base archlinux32-keyring
 
@@ -213,25 +260,8 @@ RUN apk add --no-cache pacman busybox && \
     rm -rf /etc/os-release && \
     :
 
-# Bootstrap filesystem rootfs
-RUN --network=none                                                       : && \
-    mkdir -m 0755 /rootfs/                                                 && \
-    mkdir -m 0755 /rootfs/var                                              && \
-    mkdir -m 0755 /rootfs/var/log                                          && \
-    mkdir -m 0755 /rootfs/var/lib                                          && \
-    mkdir -m 0755 /rootfs/var/cache                                        && \
-    mkdir -m 0755 /rootfs/usr                                              && \
-    mkdir -m 0755 /rootfs/usr/bin                                          && \
-    mkdir -m 0755 /rootfs/usr/lib                                          && \
-    mkdir -m 0755 /rootfs/usr/share                                        && \
-    mkdir -m 0755 /rootfs/etc                                              && \
-    mkdir -m 0755 /rootfs/dev                                              && \
-    mkdir -m 0755 /rootfs/run                                              && \
-    mkdir -m 1777 /rootfs/tmp                                              && \
-    mkdir -m 0555 /rootfs/sys                                              && \
-    mkdir -m 0555 /rootfs/proc                                             && \
-    mkdir -m 0700 /rootfs/root                                             && \
-    :
+RUN mkdir -m 0755 /rootfs/
+COPY --from=fhs / /rootfs/
 
 # Bootstrap needed pacman folders
 RUN --network=none                                                       : && \
@@ -242,21 +272,11 @@ RUN --network=none                                                       : && \
 
 # Copy alpine dependencies and fake an archlinux pacstrap
 RUN --network=none                                                       : && \
-    ln -s usr/bin /rootfs/bin                                              && \
-    ln -s usr/bin /rootfs/sbin                                             && \
     cp -ar /usr/bin/* /rootfs/usr/bin                                      && \
-    cp -ar /bin/* /rootfs/usr/bin                                          && \
-    :
-
-RUN --network=none                                                       : && \
-    ln -s usr/lib /rootfs/lib                                              && \
-    ln -s usr/lib /rootfs/lib64                                            && \
     cp -ar /usr/lib/* /rootfs/usr/lib                                      && \
-    cp -ar /lib/* /rootfs/usr/lib                                          && \
-    :
-
-RUN --network=none                                                       : && \
     cp -ar /usr/share/* /rootfs/usr/share                                  && \
+    cp -ar /bin/* /rootfs/usr/bin                                          && \
+    cp -ar /lib/* /rootfs/usr/lib                                          && \
     cp -ar /etc/* /rootfs/etc                                              && \
     :
 
@@ -264,16 +284,19 @@ FROM --platform=$TARGETPLATFORM scratch AS lite-stage1
 
 COPY --from=lite-stage0 /rootfs/ /
 
-# Copy necessary files from base archlinux container
-COPY --from=from-base /etc/os-release /etc/os-release
-COPY --from=from-base /etc/makepkg.conf /etc/makepkg.conf
-COPY --from=from-base /etc/pacman.conf /etc/pacman.conf
-COPY --from=from-base /etc/pacman.d/ /etc/pacman.d/
-
 # Substitute with busybox
 SHELL [ "/usr/bin/busybox", "sh",  "-c" ]
 
 RUN --network=none /usr/bin/busybox --install
+
+# Copy necessary files from base archlinux container
+COPY --link --from=from-base /etc/arch-release /etc/arch-release
+COPY --link --from=from-base /usr/lib/os-release /usr/lib/os-release
+COPY --link --from=from-base /etc/makepkg.conf /etc/makepkg.conf
+COPY --link --from=from-base /etc/pacman.conf /etc/pacman.conf
+COPY --link --from=from-base /etc/pacman.d/ /etc/pacman.d/
+
+RUN --network=none ln -s ../usr/lib/os-release /etc/os-release
 
 # alias for FROM dependencies
 FROM lite-stage1 AS from-lite
