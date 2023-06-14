@@ -11,7 +11,7 @@ ARG TARGETARCH=$TARGETARCH
 ARG TARGETVARIANT=$TARGETVARIANT
 
 # hadolint ignore=DL3007
-FROM --platform=$BUILDPLATFORM busybox:latest AS fhs-stage0
+FROM --platform=$BUILDPLATFORM public.ecr.aws/docker/library/busybox:latest AS fhs-stage0
 
 # Bootstrap filesystem rootfs
 RUN --network=none                                                       : && \
@@ -65,7 +65,7 @@ COPY --from=fhs-stage0 /rootfs/ /
 # PLATFORM STAGE: AMD64 (x86_64)
 # -----------------------------------------------------------------------------
 # hadolint ignore=DL3007
-FROM --platform=linux/amd64 docker.io/library/archlinux:latest AS bootstrap-archlinux-amd64
+FROM --platform=linux/amd64 registry.archlinux.org/archlinux/archlinux-docker:base-master AS bootstrap-archlinux-amd64
 
 # Init keyring and update
 RUN pacman-key --init && \
@@ -81,7 +81,7 @@ COPY --link ./amd64/makepkg.conf /etc/makepkg.conf
 # PLATFORM STAGE: ARM/v7 (armv7)
 # -----------------------------------------------------------------------------
 # hadolint ignore=DL3007
-FROM --platform=$BUILDPLATFORM docker.io/library/alpine:latest AS bootstrap0-archlinux-armv7
+FROM --platform=$BUILDPLATFORM public.ecr.aws/docker/library/alpine:latest AS bootstrap0-archlinux-armv7
 
 # Install curl bash and update CA certificates
 # hadolint ignore=DL3018
@@ -112,7 +112,7 @@ RUN rm -rf /boot/*
 # PLATFORM STAGE: ARM64/v8 (aarch64)
 # -----------------------------------------------------------------------------
 # hadolint ignore=DL3007
-FROM --platform=$BUILDPLATFORM docker.io/library/alpine:latest AS bootstrap0-archlinux-arm64
+FROM --platform=$BUILDPLATFORM public.ecr.aws/docker/library/alpine:latest AS bootstrap0-archlinux-arm64
 
 # Install curl bash and update CA certificates
 # hadolint ignore=DL3018
@@ -256,7 +256,7 @@ FROM base-stage0 AS from-base
 # -----------------------------------------------------------------------------
 # LITE
 # -----------------------------------------------------------------------------
-FROM --platform=$TARGETPLATFORM docker.io/library/alpine:edge AS lite-stage0
+FROM --platform=$TARGETPLATFORM public.ecr.aws/docker/library/alpine:edge AS lite-stage0
 
 # Install pacman and busybox and then remove all alpine leftovers
 # hadolint ignore=DL3018
