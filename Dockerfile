@@ -47,6 +47,7 @@ RUN --network=none                                                       : && \
     ln -s usr/bin /rootfs/sbin                                             && \
     ln -s usr/lib /rootfs/lib                                              && \
     mkdir -m 0755 /rootfs/etc                                              && \
+    ln -s ../proc/self/mounts /rootfs/etc/mtab                             && \
     mkdir -m 0755 /rootfs/dev                                              && \
     mkdir -m 0755 /rootfs/run                                              && \
     mkdir -m 0755 /rootfs/boot                                             && \
@@ -97,6 +98,8 @@ RUN wget --progress=dot:giga --prefer-family=IPv4 \
 FROM --platform=linux/arm/v7 scratch AS bootstrap-archlinux-armv7
 COPY --from=bootstrap0-archlinux-armv7 /rootfs/ /
 
+RUN --network=none ln -sf ../proc/self/mounts /etc/mtab
+
 # Init keyring and update
 RUN pacman-key --init && \
     pacman-key --populate archlinuxarm
@@ -128,6 +131,8 @@ RUN wget --progress=dot:giga --prefer-family=IPv4 \
 FROM --platform=linux/arm64 scratch AS bootstrap-archlinux-arm64
 COPY --from=bootstrap0-archlinux-arm64 /rootfs/ /
 
+RUN --network=none ln -sf ../proc/self/mounts /etc/mtab
+
 # Init keyring and update
 RUN pacman-key --init && \
     pacman-key --populate archlinuxarm
@@ -144,6 +149,8 @@ RUN rm -rf /boot/*
 # -----------------------------------------------------------------------------
 # hadolint ignore=DL3006
 FROM --platform=$BUILDPLATFORM bootstrap-archlinux-${BUILDARCH}${BUILDVARIANT} AS bootstrap-archlinux-builder
+
+RUN --network=none ln -sf ../proc/self/mounts /etc/mtab
 
 # Update and install build tools
 RUN pacman -Syyu base base-devel pacman-contrib devtools --noprogressbar --needed --noconfirm
@@ -190,6 +197,8 @@ RUN pacman-key --init && \
 # -----------------------------------------------------------------------------
 # hadolint ignore=DL3006
 FROM --platform=$TARGETPLATFORM bootstrap-archlinux-${TARGETARCH}${TARGETVARIANT} AS bootstrap-archlinux
+
+RUN --network=none ln -sf ../proc/self/mounts /etc/mtab
 
 # Remove unecessary packages
 # hadolint ignore=SC2086
