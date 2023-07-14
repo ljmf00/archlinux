@@ -346,10 +346,12 @@ RUN                                                                      : && \
     pacman -Syyu --noprogressbar --noconfirm                               && \
     cd /tmp                                                                && \
     git clone https://aur.archlinux.org/yay.git                            && \
-    chown -R docker:wheel yay                                              && \
-    cd yay                                                                 && \
-    sudo -u docker makepkg -sic --noprogressbar --noconfirm                && \
-    cd .. && rm -rf yay                                                    && \
+    git clone https://aur.archlinux.org/yay-bin.git                        && \
+    chown -R docker:wheel yay yay-bin                                      && \
+    ( (cd yay && sudo -u docker makepkg -sic --noprogressbar --noconfirm)  || \
+     (cd yay-bin                                                           && \
+      sudo -u docker makepkg -sic --noprogressbar --noconfirm) )           && \
+    rm -rf yay yay-bin                                                     && \
     :
 
 # alias for FROM dependencies
