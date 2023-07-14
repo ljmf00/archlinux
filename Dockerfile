@@ -343,7 +343,7 @@ FROM from-devel AS aur-stage0
 # Install yay
 # hadolint ignore=DL3004,DL3003
 RUN                                                                      : && \
-    pacman -Syyu --noprogressbar --noconfirm                               && \
+    pacman -Syyu --noprogressbar --noconfirm icu                           && \
     cd /tmp                                                                && \
     git clone https://aur.archlinux.org/yay.git                            && \
     chown -R docker:wheel yay                                              && \
